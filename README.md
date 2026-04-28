@@ -74,4 +74,4 @@ systemctl --user start syncp.service   # run a oneshot job by hand
 
 ## License
 
-GNU General Public License v3.0 — see `LICENSE`.
+GNU General Public License v3.0 — see [LICENSE](LICENSE).
