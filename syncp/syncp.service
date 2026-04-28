@@ -1,0 +1,82 @@
+# syncp.service — KeePass vault backup pipeline (systemd user unit).
+#
+# Layout this unit assumes:
+#   ~/.local/bin/scripts/syncp.py    — the pipeline script (stowed from
+#                                      dotfiles/scripts/.local/bin/scripts/)
+#   ~/.secrets/borg.env              — KEY=VALUE file with BORG_PASSPHRASE=...
+#                                      (mode 0600, dir 0700)
+#   ~/systemdcustom/syncp/*.service  — this repo
+#   ~/systemdcustom/syncp/*.timer
+#
+# Install:
+#   1. Make sure the secret file exists and is locked down:
+#        install -m 700 -d ~/.secrets
+#        printf 'BORG_PASSPHRASE=%s\n' 'your-passphrase' > ~/.secrets/borg.env
+#        chmod 600 ~/.secrets/borg.env
+#   2. Symlink (or copy) the unit files into the user units directory.
+#        Symlinking lets you `git pull` upstream changes without re-copying.
+#        mkdir -p ~/.config/systemd/user
+#        ln -s ~/systemdcustom/syncp/syncp.service        ~/.config/systemd/user/
+#        ln -s ~/systemdcustom/syncp/syncp.timer          ~/.config/systemd/user/
+#        ln -s ~/systemdcustom/syncp/syncp-failure.service ~/.config/systemd/user/
+#   3. Enable the timer (it pulls in the service when it fires):
+#        systemctl --user daemon-reload
+#        systemctl --user enable --now syncp.timer
+#   4. Test once by hand:
+#        systemctl --user start syncp.service
+#        journalctl --user -u syncp.service -e
+#
+# Pipeline details and exit codes are in the script's module docstring.
+
+[Unit]
+Description=KeePass vault → Borg → cloud-remote backup
+Documentation=file:%h/.local/bin/scripts/syncp.py
+
+# Wait for real network connectivity (a routable address), not just for
+# the network stack to be loaded — rclone would otherwise fail on the
+# first sync of every boot.
+After=network-online.target
+Wants=network-online.target
+
+# Fire syncp-failure.service if we exit non-zero (i.e. on EXIT_LOCAL_FAILURE
+# or EXIT_REMOTE_FAILURE). The "skipped because offline" path returns 0,
+# so a flaky network on a given day will NOT trigger the notifier.
+OnFailure=syncp-failure.service
+
+[Service]
+Type=oneshot
+ExecStart=%h/.local/bin/scripts/syncp.py
+
+# Hard ceiling on the entire run. Must be larger than the script's
+# internal timeouts (RCLONE_TIMEOUT × len(REMOTES) ≈ 6h) so syncp.py's
+# own per-command timeout fires first and we get a clean error log
+# rather than systemd killing the process mid-rclone.
+TimeoutStartSec=8h
+
+# Source the Borg passphrase from a KEY=VALUE file. The file lives
+# outside the public dotfiles repo and is mode 0600. systemd reads it
+# at service start and injects every entry into the unit's environment,
+# so the script sees BORG_PASSPHRASE the same as if it had been exported
+# in the parent shell.
+#
+# Trade-off vs. LoadCredential=: the passphrase is now visible in
+# /proc/<pid>/environ to root and to processes running as this user.
+# That's fine for a single-user laptop; on a shared box, prefer
+# LoadCredential= + BORG_PASSCOMMAND.
+EnvironmentFile=%h/.secrets/borg.env
+
+# Be a polite background job: never preempt interactive work.
+Nice=10
+IOSchedulingClass=idle
+
+# Sandboxing. Kept modest because this is a user unit that legitimately
+# needs to read ~/vault and write ~/keepass-backups — ProtectHome would
+# break both. The kernel-side restrictions below are free wins.
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+
+# Note: no [Install] section. The service is pulled in by syncp.timer;
+# enabling it directly would bypass the schedule.

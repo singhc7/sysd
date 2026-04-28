@@ -1,0 +1,32 @@
+# syncp.timer — daily trigger for syncp.service.
+#
+# Companion to syncp.service. Install both into ~/.config/systemd/user/
+# and enable with `systemctl --user enable --now syncp.timer`.
+
+[Unit]
+Description=Run syncp.service daily
+
+[Timer]
+# "daily" = every day at 00:00 local time. Combined with RandomizedDelaySec
+# below, the actual fire time is 00:00–00:15.
+OnCalendar=daily
+
+# If the laptop was suspended/off when the timer should have fired,
+# run it ASAP after the system comes back. Without this the daily
+# backup would silently skip days the machine wasn't on at midnight.
+Persistent=true
+
+# Spread load across the 15 minutes after midnight so the backup
+# doesn't dogpile with every other "OnCalendar=daily" timer the system
+# has. 15 minutes is plenty for a single-machine rig.
+RandomizedDelaySec=15min
+
+# Explicit pairing — the unit name happens to match the timer name, so
+# this line is technically optional, but stating it makes the intent
+# obvious and survives any future rename of the timer file.
+Unit=syncp.service
+
+[Install]
+# Pulled in by the user's `timers.target`, which is started automatically
+# when the user manager comes up.
+WantedBy=timers.target

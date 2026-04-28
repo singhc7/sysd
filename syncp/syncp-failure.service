@@ -1,0 +1,25 @@
+# syncp-failure.service — desktop notification when syncp.service fails.
+#
+# Wired up via `OnFailure=syncp-failure.service` in syncp.service.
+# Fires only on non-zero exit — the "skipped because offline" code path
+# returns 0, so this won't bother you on bad-network days.
+#
+# Requires libnotify (`notify-send`). On Arch:
+#   sudo pacman -S libnotify
+#
+# If you also want the alert to survive a closed/locked session,
+# replace the ExecStart with an ntfy/Pushover/email call instead.
+
+[Unit]
+Description=Desktop notification on syncp.service failure
+
+[Service]
+Type=oneshot
+
+# -u critical → red persistent banner that doesn't auto-dismiss.
+# notify-send is silent if no notification daemon is running (e.g. when
+# triggered over SSH with no graphical session) — in that case the
+# journal entry from syncp.service itself is the audit trail.
+ExecStart=/usr/bin/notify-send -u critical \
+    "syncp backup failed" \
+    "Run: journalctl --user -u syncp.service -e"
