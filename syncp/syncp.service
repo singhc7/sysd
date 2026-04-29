@@ -32,12 +32,6 @@
 Description=KeePass vault → Borg → cloud-remote backup
 Documentation=file:%h/.local/bin/scripts/syncp.py
 
-# Wait for real network connectivity (a routable address), not just for
-# the network stack to be loaded — rclone would otherwise fail on the
-# first sync of every boot.
-After=network-online.target
-Wants=network-online.target
-
 # Fire syncp-failure.service if we exit non-zero (i.e. on EXIT_LOCAL_FAILURE
 # or EXIT_REMOTE_FAILURE). The "skipped because offline" path returns 0,
 # so a flaky network on a given day will NOT trigger the notifier.
@@ -45,6 +39,15 @@ OnFailure=syncp-failure.service
 
 [Service]
 Type=oneshot
+
+# Block until NetworkManager has a routable connection, up to 120s. In a
+# user unit, After=network-online.target is a no-op (that target lives in
+# the system manager), so without this probe the service can fire seconds
+# after boot/login — before Wi-Fi has associated — and the script's offline
+# path silently skips the cloud sync. nm-online exits 0 once online and
+# non-zero on timeout; on timeout we still ExecStart the script, which
+# will hit its own offline path and exit 0 cleanly.
+ExecStartPre=-/usr/bin/nm-online -q --timeout=120
 ExecStart=%h/.local/bin/scripts/syncp.py
 
 # Hard ceiling on the entire run. Must be larger than the script's
