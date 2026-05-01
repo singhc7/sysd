@@ -74,4 +74,7 @@ systemctl --user start syncp.service   # run a oneshot job by hand
 
 ## License
 
-GNU General Public License v3.0 — see [LICENSE](LICENSE).
+Dual-licensed under [CC BY-NC-SA 4.0](LICENSE-CC-BY-NC-SA) and
+[PolyForm Noncommercial 1.0.0](LICENSE-POLYFORM). Free for personal,
+educational, and charitable use; commercial use requires a separate
+license — contact me.
