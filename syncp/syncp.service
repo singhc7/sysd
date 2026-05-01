@@ -3,7 +3,7 @@
 # Layout this unit assumes:
 #   ~/.local/bin/scripts/syncp.py    — the pipeline script (stowed from
 #                                      dotfiles/scripts/.local/bin/scripts/)
-#   ~/.secrets/borg.env              — KEY=VALUE file with BORG_PASSPHRASE=...
+#   ~/.secrets/syncp.env              — KEY=VALUE file with BORG_PASSPHRASE=... RCLONE_CONFIG_PASS=...
 #                                      (mode 0600, dir 0700)
 #   ~/systemdcustom/syncp/*.service  — this repo
 #   ~/systemdcustom/syncp/*.timer
@@ -11,8 +11,9 @@
 # Install:
 #   1. Make sure the secret file exists and is locked down:
 #        install -m 700 -d ~/.secrets
-#        printf 'BORG_PASSPHRASE=%s\n' 'your-passphrase' > ~/.secrets/borg.env
-#        chmod 600 ~/.secrets/borg.env
+#        printf 'BORG_PASSPHRASE=%s\n' 'your-passphrase' > ~/.secrets/syncp.env
+#        printf 'RCLONE_CONFIG_PASS=%s\n' 'your-passphrase' > ~/.secrets/syncp.env
+#        chmod 600 ~/.secrets/syncp.env
 #   2. Symlink (or copy) the unit files into the user units directory.
 #        Symlinking lets you `git pull` upstream changes without re-copying.
 #        mkdir -p ~/.config/systemd/user
@@ -65,8 +66,8 @@ TimeoutStartSec=8h
 # Trade-off vs. LoadCredential=: the passphrase is now visible in
 # /proc/<pid>/environ to root and to processes running as this user.
 # That's fine for a single-user laptop; on a shared box, prefer
-# LoadCredential= + BORG_PASSCOMMAND.
-EnvironmentFile=%h/.secrets/borg.env
+# LoadCredential= + BORG_PASSCOMMAND / RCLONE_PASSWORD_COMMAND.
+EnvironmentFile=%h/.secrets/syncp.env
 
 # Be a polite background job: never preempt interactive work.
 Nice=10
