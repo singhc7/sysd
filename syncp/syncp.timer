@@ -7,9 +7,9 @@
 Description=Run syncp.service daily
 
 [Timer]
-# "daily" = every day at 00:00 local time. Combined with RandomizedDelaySec
-# below, the actual fire time is 00:00–00:15.
-OnCalendar=daily
+# "*-*-*" = every year, month and day at 04:45 AM Winnipeg time. Combined with RandomizedDelaySec
+# below, the actual fire time is between 04:45–05:00 AM.
+OnCalendar=*-*-* 04:45:00 America/Winnipeg
 
 # If the laptop was suspended/off when the timer should have fired,
 # run it ASAP after the system comes back. Without this the daily
