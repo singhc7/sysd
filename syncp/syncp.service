@@ -48,7 +48,7 @@ Type=oneshot
 # path silently skips the cloud sync. nm-online exits 0 once online and
 # non-zero on timeout; on timeout we still ExecStart the script, which
 # will hit its own offline path and exit 0 cleanly.
-ExecStartPre=-/usr/bin/nm-online -q --timeout=120
+# ExecStartPre=-/usr/bin/nm-online -q --timeout=120
 ExecStart=%h/.local/bin/scripts/syncp.py
 
 # Hard ceiling on the entire run. Must be larger than the script's
@@ -67,6 +67,9 @@ TimeoutStartSec=8h
 # /proc/<pid>/environ to root and to processes running as this user.
 # That's fine for a single-user laptop; on a shared box, prefer
 # LoadCredential= + BORG_PASSCOMMAND / RCLONE_PASSWORD_COMMAND.
+# Inject the Homebrew bin path so systemd can find python3, it's
+# libraries, rclone and borg
+Environment="PATH=/home/linuxbrew/.linuxbrew/bin:/usr/local/bin:/usr/bin:/bin"
 EnvironmentFile=%h/.secrets/syncp.env
 
 # Be a polite background job: never preempt interactive work.
