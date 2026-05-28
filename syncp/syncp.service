@@ -67,9 +67,9 @@ TimeoutStartSec=8h
 # /proc/<pid>/environ to root and to processes running as this user.
 # That's fine for a single-user laptop; on a shared box, prefer
 # LoadCredential= + BORG_PASSCOMMAND / RCLONE_PASSWORD_COMMAND.
-# Inject the Homebrew bin path so systemd can find python3, it's
+# Inject the Nix user profile bin path so systemd can find python3, it's
 # libraries, rclone and borg
-Environment="PATH=/home/linuxbrew/.linuxbrew/bin:/usr/local/bin:/usr/bin:/bin"
+Environment="PATH=/home/ubuntu/.nix-profile/bin:/usr/local/bin:/usr/bin:/bin"
 EnvironmentFile=%h/.secrets/syncp.env
 
 # Be a polite background job: never preempt interactive work.
